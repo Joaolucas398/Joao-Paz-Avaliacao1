@@ -13,7 +13,7 @@ class Calculator {
   };
 
   static inputDisplay = (digit: string) => {
-    if (Calculator.displayValue.length >= 9) {
+    if (Calculator.displayValue.length >= 8) {
       return;
     }
 
@@ -24,6 +24,51 @@ class Calculator {
 
     Calculator.displayValue += digit;
     Calculator.updateDisplay();
+  };
+
+  static inputDecimal = () => {
+    if (!Calculator.decimalEntered) {
+      Calculator.displayValue += ".";
+      Calculator.decimalEntered = true;
+    }
+    Calculator.updateDisplay();
+  };
+
+  //Não existe o botão de porcentagem na calculadora, mas o código está aqui.
+  static percentage = () => {
+    const currentValue = parseFloat(Calculator.displayValue);
+    if (!isNaN(currentValue)) {
+      Calculator.displayValue = (currentValue / 100).toString();
+      Calculator.updateDisplay();
+    }
+  };
+
+  static squareRoot = () => {
+    const currentValue = parseFloat(Calculator.displayValue);
+    if (!isNaN(currentValue)) {
+      Calculator.displayValue = Math.sqrt(currentValue).toString();
+      Calculator.updateDisplay();
+    }
+  };
+
+  static changeSign = () => {
+    Calculator.displayValue = (-parseFloat(Calculator.displayValue)).toString();
+    Calculator.updateDisplay();
+  };
+
+  static evaluateExpression = () => {
+    try {
+      const expression = Calculator.displayValue;
+      const result = Function(`"use strict"; return (${expression});`)();
+
+      if (!isNaN(result)) {
+        Calculator.displayValue = result.toString();
+        Calculator.updateDisplay();
+      }
+    } catch (error) {
+      Calculator.displayValue = "Erro";
+      Calculator.updateDisplay();
+    }
   };
 
   static clearResult = () => {
@@ -98,6 +143,16 @@ class Calculator {
           Calculator.setOperator(buttonText);
         } else if (buttonText === "igual") {
           Calculator.performOperation();
+        } else if (buttonText === "igual") {
+          Calculator.evaluateExpression();
+        } else if (buttonText === "porcentagem") {
+          Calculator.percentage();
+        } else if (buttonText === "signo") {
+          Calculator.changeSign();
+        } else if (buttonText === "raiz") {
+          Calculator.squareRoot();
+        } else if (buttonText === ".") {
+          Calculator.inputDecimal();
         } else if (buttonText === "on") {
           Calculator.clearResult();
         } else {
