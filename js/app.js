@@ -1,17 +1,12 @@
 var Calculator = /** @class */ (function () {
     function Calculator() {
     }
-    Calculator.buttons = document.querySelectorAll(".tecla");
-    Calculator.display = document.getElementById("display");
-    Calculator.displayValue = "0";
-    Calculator.operator = null;
-    Calculator.waitingForSecondOperand = false;
-    Calculator.decimalEntered = false;
     Calculator.updateDisplay = function () {
         Calculator.display.textContent = Calculator.displayValue;
     };
     Calculator.inputDisplay = function (digit) {
-        if (Calculator.displayValue.length >= 8) {
+        var regex = /^[0-9]$/;
+        if (Calculator.displayValue.length >= 8 || !regex.test(digit)) {
             return;
         }
         if (Calculator.displayValue === "0" || Calculator.operator === "=") {
@@ -28,7 +23,6 @@ var Calculator = /** @class */ (function () {
         }
         Calculator.updateDisplay();
     };
-    //Não existe o botão de porcentagem na calculadora, mas o código está aqui.
     Calculator.percentage = function () {
         var currentValue = parseFloat(Calculator.displayValue);
         if (!isNaN(currentValue)) {
@@ -67,47 +61,47 @@ var Calculator = /** @class */ (function () {
         Calculator.operator = null;
         Calculator.waitingForSecondOperand = false;
         Calculator.decimalEntered = false;
+        Calculator.pendingOperator = null;
         Calculator.updateDisplay();
     };
     Calculator.setOperator = function (operator) {
-        if (Calculator.operator === "=") {
-            Calculator.previousValue = Calculator.displayValue;
-            Calculator.displayValue = "";
-            Calculator.operator = null;
+        if (Calculator.pendingOperator !== null) {
+            Calculator.performOperation();
         }
+        Calculator.operator = Calculator.operator === "=" ? null : operator;
         if (!Calculator.waitingForSecondOperand) {
             Calculator.waitingForSecondOperand = true;
             Calculator.previousValue = Calculator.displayValue;
             Calculator.displayValue = "";
         }
-        Calculator.operator = operator;
+        Calculator.pendingOperator = operator;
     };
     Calculator.performOperation = function () {
         if (Calculator.previousValue !== "" && Calculator.displayValue !== "") {
-            var prev = parseFloat(Calculator.previousValue);
-            var current = parseFloat(Calculator.displayValue);
+            var previousValue = parseFloat(Calculator.previousValue);
+            var currentValue = parseFloat(Calculator.displayValue);
             switch (Calculator.operator) {
                 case "mais":
-                    Calculator.displayValue = (prev + current).toString();
+                    Calculator.displayValue = (previousValue + currentValue).toString();
                     break;
                 case "menos":
-                    Calculator.displayValue = (prev - current).toString();
+                    Calculator.displayValue = (previousValue - currentValue).toString();
                     break;
                 case "por":
-                    Calculator.displayValue = (prev * current).toString();
+                    Calculator.displayValue = (previousValue * currentValue).toString();
                     break;
                 case "dividido":
-                    if (current !== 0) {
-                        Calculator.displayValue = (prev / current).toString();
-                    }
-                    else {
-                        Calculator.displayValue = "Erro";
-                    }
+                    Calculator.displayValue =
+                        currentValue !== 0
+                            ? (previousValue / currentValue).toString()
+                            : "Erro";
                     break;
                 default:
                     break;
             }
-            Calculator.operator = "=";
+            Calculator.operator =
+                Calculator.pendingOperator === "=" ? null : Calculator.pendingOperator;
+            Calculator.pendingOperator = null;
             Calculator.waitingForSecondOperand = false;
         }
         Calculator.updateDisplay();
@@ -116,39 +110,48 @@ var Calculator = /** @class */ (function () {
         Calculator.buttons.forEach(function (button) {
             button.addEventListener("click", function () {
                 var buttonText = button.getAttribute("id");
-                if (buttonText === "mais" ||
-                    buttonText === "menos" ||
-                    buttonText === "por" ||
-                    buttonText === "dividido") {
-                    Calculator.setOperator(buttonText);
-                }
-                else if (buttonText === "igual") {
-                    Calculator.performOperation();
-                }
-                else if (buttonText === "igual") {
-                    Calculator.evaluateExpression();
-                }
-                else if (buttonText === "porcentagem") {
-                    Calculator.percentage();
-                }
-                else if (buttonText === "signo") {
-                    Calculator.changeSign();
-                }
-                else if (buttonText === "raiz") {
-                    Calculator.squareRoot();
-                }
-                else if (buttonText === ".") {
-                    Calculator.inputDecimal();
-                }
-                else if (buttonText === "on") {
-                    Calculator.clearResult();
-                }
-                else {
-                    Calculator.inputDisplay(buttonText);
+                switch (buttonText) {
+                    case "mais":
+                    case "menos":
+                    case "por":
+                    case "dividido":
+                        Calculator.setOperator(buttonText);
+                        break;
+                    case "igual":
+                        Calculator.operator === null
+                            ? Calculator.evaluateExpression()
+                            : Calculator.performOperation();
+                        break;
+                    case "porcentagem":
+                        Calculator.percentage();
+                        break;
+                    case "signo":
+                        Calculator.changeSign();
+                        break;
+                    case "raiz":
+                        Calculator.squareRoot();
+                        break;
+                    case ".":
+                        Calculator.inputDecimal();
+                        break;
+                    case "on":
+                        Calculator.clearResult();
+                        break;
+                    default:
+                        Calculator.inputDisplay(buttonText);
+                        break;
                 }
             });
         });
     };
+    Calculator.buttons = document.querySelectorAll(".tecla");
+    Calculator.display = document.getElementById("display");
+    Calculator.displayValue = "0";
+    Calculator.previousValue = "";
+    Calculator.operator = null;
+    Calculator.waitingForSecondOperand = false;
+    Calculator.decimalEntered = false;
+    Calculator.pendingOperator = null;
     return Calculator;
 }());
 Calculator.start();
